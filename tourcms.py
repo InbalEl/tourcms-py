@@ -1,6 +1,7 @@
 import hmac
 import hashlib
 import datetime as dt
+import calendar
 try: # Python 3
   import urllib.parse as urllib
 except ImportError:
@@ -58,12 +59,12 @@ class Connection(object):
     self.logger.debug("url is: {0}".format(url))
     req_time = dt.datetime.utcnow()
     signature = self._generate_signature(
-      path + "?" + urllib.urlencode(params), verb, channel, int(time.mktime(req_time.timetuple()))
+      path + "?" + urllib.urlencode(params), verb, channel, int(time.mktime(calendar.timegm(req_time.timetuple())))
     )    
     headers = {
       "Content-type": "text/xml", 
       "charset": "utf-8", 
-      "Date": req_time.strftime("%a, %d %b %Y %H:%M:%S GMT"), 
+      "x-tourcms-date": req_time.strftime("%a, %d %b %Y %H:%M:%S GMT"), 
       "Authorization": "TourCMS {0}:{1}:{2}".format(channel, self.marketp_id, signature)
     }
     self.logger.debug("Headers are: {0}".format(", ".join(["{0} => {1}".format(k,v) 
