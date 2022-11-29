@@ -1,5 +1,4 @@
 import datetime as dt
-import time
 import calendar
 import urllib
 import xmltodict
@@ -8,7 +7,7 @@ import hashlib
 import base64
 
 __author__ = 'Inbal Elmaleh'
-__version__ = '1.0'
+__version__ = '0.0.1'
 __license__ = 'BSD'
 
 # self:
@@ -19,6 +18,8 @@ __license__ = 'BSD'
 
 # TODO: for all new funcs, check param names and structures to make sure they match
 # TODO: re-add logger
+# TODO: test you lazy bastard, test
+# TODO: check tourcms's fix for the time.time() issue
 
 class Connection(object):
   def __init__(self, marketp_id, private_key, result_type = "raw"):
@@ -91,6 +92,12 @@ class Connection(object):
   def list_channels(self):
     return self._request("/p/channels/list.xml")
   
+  def channel_performance(self, channel):
+    if channel == 0:
+      return(self._request('/p/channels/performance.xml'), channel)
+    else:
+      return(self._request('/c/channel/performance.xml', channel))
+	
   def show_channel(self, channel):
     return self._request("/c/channel/show.xml", channel)
 
@@ -111,12 +118,13 @@ class Connection(object):
   def tour_dates_and_deals(self, params = {}, tour = "", channel = 0):
     return self._request("/c/tour/datesprices/datesndeals/search.xml", channel, {"id": tour})
 
-  # todo
-  # def update_tour(self, ):
-  #   return self._request("/c/tour/update.xml", channel, {"id": tour})
+  # todo: check params
+  def update_tour(self, channel, tour_data):
+    return self._request("/c/tour/update.xml", channel, {"tour_data": tour_data})
 
-  # todo
-  # list tour locations
+  # todo: check params
+  def update_tour_url(self, channel, url_data):
+    return(self.update_tour(channel, url_data))
 
   def list_product_filters(self, channel = 0):
     return self._request("/c/tours/filters.xml", channel)
@@ -149,7 +157,14 @@ class Connection(object):
       return self._request("/p/tours/images/list.xml")
     else:
       return self._request("/c/tours/images/list.xml", channel)
-  
+
+  # todo: check params
+  def list_tour_locations(self, channel, params):
+    if channel == 0:
+      return self._request("/p/tours/locations.xml", channel, params)
+    else:
+      return self._request("/c/tours/locations.xml", channel, params)
+
   def show_tour_departures(self, tour, channel):
     return self._request("/c/tour/datesprices/dep/show.xml", channel, {"id": tour})
   
@@ -199,6 +214,10 @@ class Connection(object):
     params.update({"tour_id": tour})
     return self._request("/c/tour/datesprices/checkavail.xml", channel, params)
 
+  # todo: check params - but should be ok
+  def show_promo(self, channel, promo):
+    return self._request("/c/promo/show.xml", channel, {"promo_code": promo}) 
+
   # todo: check params
   def get_new_booking_key(self, channel, customer_data):
     return self._request("/c/booking/new/get_redirect_url.xml", channel,
@@ -239,21 +258,6 @@ class Connection(object):
   def update_booking(self, channel, booking_data):
       return self._request("/c/booking/update.xml", channel,
                            {"booking_data": booking_data}, verb='POST')
-  
-  # todo: check params
-  def update_booking_component(self, channel, component_data):
-      return self._request("/c/booking/component/update.xml", channel,
-                           {"component_data": component_data}, verb='POST')
-  
-  # todo: check params
-  def add_booking_component(self, channel, component_data):
-      return self._request("/c/booking/component/new.xml", channel,
-                           {"component_data": component_data}, verb='POST')
-
-  # todo: check params
-  def remove_booking_component(self, channel, component_data):
-      return self._request("/c/booking/component/delete.xml", channel,
-                           {"component_data": component_data}, verb='POST')  
 
   # todo: check params
   def add_note_to_booking(self, channel, booking, note, note_type):
@@ -271,7 +275,40 @@ class Connection(object):
       return self._request("/c/booking/cancel.xml", channel,
                            {"booking_data": booking_data}, verb='POST')
 
+  # todo: check params
+  def delete_booking(self, channel, booking_data):
+      return self._request("/c/booking/delete.xml", channel,
+                           {"booking_data": booking_data}, verb='POST')
+
+  # todo: check params
+  def check_option_availability(self, channel, booking, component_data):
+    return self._request("/c/booking/options/checkavail.xml", channel,
+                         {"booking": booking, "component_data": component_data})
+ 
+  # todo: check params
+  def update_booking_component(self, channel, component_data):
+      return self._request("/c/booking/component/update.xml", channel,
+                           {"component_data": component_data}, verb='POST')
+  
+  # todo: check params
+  def add_booking_component(self, channel, component_data):
+      return self._request("/c/booking/component/new.xml", channel,
+                           {"component_data": component_data}, verb='POST')
+
+  # todo: check params
+  def remove_booking_component(self, channel, component_data):
+      return self._request("/c/booking/component/delete.xml", channel,
+                           {"component_data": component_data}, verb='POST')
+
   # PAYMENTS
+
+  # todo:
+  # create_payment
+  # log_failed_payment
+  # spreedly_create_payment
+  # spreedly_complete_payment
+
+
   # todo: check params
   def record_payment_or_refund(self, channel, payment):
     return self._request("/c/booking/new/commit.xml", channel,
@@ -338,7 +375,12 @@ class Connection(object):
     return self._request("/c/agents/update.xml", channel,
                          {"update": agent_data}, verb="POST")
   
-  # todo: Travel Agent login via API  
+  # todo: Travel Agent login via API - are there more funcs?
+  def start_new_agent_login(self, channel, params):
+    return self._request("/c/start_agent_login.xml", channel, params, verb="POST")
+  
+  def retrieve_agent_booking_key(self, channel, private_token):
+    return self._request("/c//c/retrieve_agent_booking_key.xml", channel, {"k": private_token})
 
   # INTERNAL SUPPLIERS (Tour Operator use only)
   def show_supplier(self, supplier, channel):
