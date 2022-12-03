@@ -2,34 +2,26 @@ import hmac
 import hashlib
 import datetime as dt
 import calendar
-try: # Python 3
-  import urllib.parse as urllib
-except ImportError:
-  import urllib
-try: # Python 3
-  import urllib.request as urllib2
-except ImportError: 
-    import urllib2
-try:
-  import xmltodict
-except ImportError:
-  pass
-import time
+import urllib
+import xmltodict
 import base64
 import logging
 
 
-__author__ = 'Jonathan Harrington'
-__version__ = '0.3'
+__author__ = 'Inbal Elmaleh'
+__version__ = '0.1'
 __license__ = 'BSD'
 
 
 class Connection(object):
   def __init__(self, marketp_id, private_key, result_type = "raw", loglevel = logging.CRITICAL):
+    
     try:
       int(marketp_id)
+
     except ValueError:
       raise TypeError("Marketplace ID must be an Integer")
+    
     self.marketp_id = int(marketp_id)
     self.private_key = private_key
     self.result_type = result_type
@@ -39,10 +31,13 @@ class Connection(object):
     self.logger.setLevel(loglevel)
     
   def _generate_signature(self, path, verb, channel, outbound_time):
-    string_to_sign = u"{0}/{1}/{2}/{3}{4}".format(channel, self.marketp_id, verb, outbound_time, path)
-    self.logger.debug("string_to_sign is: {0}".format(string_to_sign))
+
+    string_to_sign = f"{channel}/{self.marketp_id}/{verb}/{outbound_time}{path}"
+    self.logger.debug(f"string_to_sign is: {string_to_sign}")
+
     dig = hmac.new(self.private_key.encode('utf8'), string_to_sign.encode('utf8'), hashlib.sha256)
     b64 = base64.b64encode(dig.digest())
+
     return urllib.quote_plus(b64)
 
   def _response_to_native(self, response):
@@ -56,23 +51,25 @@ class Connection(object):
 
   def _request(self, path, channel = 0, params = {}, verb = "GET"):
     url = self.base_url + path + "?" + urllib.urlencode(params)
-    self.logger.debug("url is: {0}".format(url))
+    self.logger.debug(f"url is: {url}")
     req_time = dt.datetime.utcnow()
     signature = self._generate_signature(
       path + "?" + urllib.urlencode(params), verb, channel, int(calendar.timegm(req_time.timetuple()))
-    )    
+    )
+
     headers = {
-      "Content-type": "text/xml", 
+      "Content-type": "text/xml",
       "charset": "utf-8", 
-      "Date": req_time.strftime("%a, %d %b %Y %H:%M:%S GMT"), 
-      "Authorization": "TourCMS {0}:{1}:{2}".format(channel, self.marketp_id, signature)
+      "x-tourcms-date": req_time.strftime("%a, %d %b %Y %H:%M:%S GMT"), 
+      "Authorization": f"TourCMS {channel}:{self.marketp_id}:{signature}"
     }
-    self.logger.debug("Headers are: {0}".format(", ".join(["{0} => {1}".format(k,v) 
-                                                           for k,v in headers.items()])))
-    req = urllib2.Request(url)
+
+    self.logger.debug("Headers are: {0}".format(", ".join([f"{k} => {v}" for k,v in headers.items()])))
+    req = urllib.request.Request(url)
+
     for key, value in headers.items():
       req.add_header(key, value)
-    response = urllib2.urlopen(req).read()
+    response = urllib.request.urlopen(req).read()
     return response if self.result_type == "raw" else self._response_to_native(response)
 
   def api_rate_limit_status(self, channel = 0):
