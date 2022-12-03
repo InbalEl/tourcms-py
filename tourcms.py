@@ -19,7 +19,6 @@ __license__ = 'BSD'
 # TODO: for all new funcs, check param names and structures to make sure they match
 # TODO: re-add logger
 # TODO: test you lazy bastard, test
-# TODO: check tourcms's fix for the time.time() issue
 
 class Connection(object):
   def __init__(self, marketp_id, private_key, result_type = "raw"):
@@ -118,18 +117,17 @@ class Connection(object):
   def tour_dates_and_deals(self, params = {}, tour = "", channel = 0):
     return self._request("/c/tour/datesprices/datesndeals/search.xml", channel, {"id": tour})
 
-  # todo: check params
+  # todo: test params
   def update_tour(self, channel, tour_data):
-    return self._request("/c/tour/update.xml", channel, {"tour_data": tour_data})
+    return self._request("/c/tour/update.xml", channel, {"update": tour_data})
 
-  # todo: check params
+  # todo: test params
   def update_tour_url(self, channel, url_data):
-    return(self.update_tour(channel, url_data))
+    return(self.update_tour(channel, {"tour": url_data}))
 
   def list_product_filters(self, channel = 0):
     return self._request("/c/tours/filters.xml", channel)
 
-  # todo: does this still exist?
   def search_hotels_range(self, params = {}, tour = "", channel = 0):
     params.update({"single_tour_id": tour})
     if channel == 0:
@@ -137,7 +135,6 @@ class Connection(object):
     else:
       return self._request("/c/hotels/search_range.xml", channel, params)
     
-  # todo: does this still exist?
   def search_hotels_specific(self, params = {}, tour = "", channel = 0):
     params.update({"single_tour_id": tour})
     if channel == 0:
@@ -151,14 +148,13 @@ class Connection(object):
     else:
       return self._request("/c/tours/list.xml", channel)
 
-  # todo: does this still exist?
   def list_tour_images(self, channel = 0):
     if channel == 0:
       return self._request("/p/tours/images/list.xml")
     else:
       return self._request("/c/tours/images/list.xml", channel)
 
-  # todo: check params
+  # todo: test params
   def list_tour_locations(self, channel, params):
     if channel == 0:
       return self._request("/p/tours/locations.xml", channel, params)
